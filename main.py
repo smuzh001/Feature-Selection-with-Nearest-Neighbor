@@ -18,7 +18,7 @@ def leave_one_out_cross_validation(x, curr_set):
     }
     return switch.get(x, 0)
 
-def leave_one_out(data, k):
+def leave_one_out(data, curr_set, k):
     num_correct = 0
      #iterate through rows
     for i in range(0, len(data) - 1):
@@ -30,12 +30,17 @@ def leave_one_out(data, k):
         for j in range(0, len(data)- 1):
             if i != j:
                 #print('for exemplar '+str(i)+' i am comparing to '+ str(j))
-                distance = math.sqrt((data[i][k] - data[j][k])**2 )
+                #distance = math.sqrt((data[i][k] - data[j][k])**2 )
+                distance = 0
+                for feature in curr_set:
+                    distance += (data[i][feature] - data[j][feature] )**2
+                distance = math.sqrt(distance + (data[i][k] - data[j][k] )**2 )
+
                 if distance < best_so_far:
                     best_so_far = distance
                     best_loc = j
 
-        print('for exemplar '+ str(i)+ ' I believe its NN is '+str(best_loc))
+        #print('for exemplar '+ str(i)+ ' I believe its NN is '+str(best_loc))
         if data[i][0] == data[best_loc][0]:
             num_correct += 1
             #print('exempler '+str(i)+' is correct')
@@ -43,32 +48,41 @@ def leave_one_out(data, k):
     #print(Accuracy)
     return Accuracy
 
+
 def ForwardSelection():
     #print('Foward Selection is cool')
+    best_set = set()
+    best_acc = 0
+
     with open('CS170_SMALLtestdata__27.txt') as file:
         result = [[float(val) for val in line.split()] for line in file]
     print(result[0][1])
     featureCount = len(result[0]) - 1
     curr_set = set()
-    print(leave_one_out(result, 1))
-    # for i in range(1, featureCount + 1):
-    #     feature_to_add_at_this_level = []
-    #     best_acc_so_far = 0
+    #print(leave_one_out(result, 1))
+    for i in range(1, featureCount + 1):
+        feature_to_add_at_this_level = None
+        best_acc_so_far = 0
         
-    #     for j in range(1, featureCount + 1):
-    #         #ignore if j is already part of set
-    #         if j in curr_set:
-    #             continue
-    #         #print('\tConsidering adding the '+ str(j)+ ' feature')
-    #         accuracy = leave_one_out_cross_validation(j,curr_set)
-    #         if accuracy > best_acc_so_far:
-    #             best_acc_so_far = accuracy
-    #             feature_to_add_at_this_level = j        
+        for j in range(1, featureCount + 1):
+            #ignore if j is already part of set
+            if j in curr_set:
+                continue
+            #print('\tConsidering adding the '+ str(j)+ ' feature')
+            accuracy = leave_one_out(result, curr_set ,j)
+            if accuracy > best_acc_so_far:
+                best_acc_so_far = accuracy
+                feature_to_add_at_this_level = j        
         
-    #     print('best accuracy this level: ' + str(feature_to_add_at_this_level) +' with an accuracy of '+str(best_acc_so_far))
-    #     curr_set.add(feature_to_add_at_this_level)        
-    #     #print('On the '+ str(i) + ' level of the search tree')
+        print('most accurate feature at level '+str(i)+': ' + str(feature_to_add_at_this_level) +' with an accuracy of '+str(best_acc_so_far))
+        
+        curr_set.add(feature_to_add_at_this_level)
 
+        if best_acc_so_far > best_acc:
+            best_acc = best_acc_so_far
+            best_set = curr_set.copy()   
+        #print('On the '+ str(i) + ' level of the search tree')
+    print('On small dataset, the error rate can be '+str(best_acc) + ' when using only features: '+ str(best_set))
 
 
 
